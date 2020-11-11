@@ -22,11 +22,11 @@ import static com.whiskels.telegram.util.TelegramUtil.createMessageTemplate;
 @Slf4j
 @Component
 public class QuizHandler implements Handler {
-    //Храним поддерживаемые CallBackQuery в виде констант
+    // Supported CallBackQueries are stored as constants
     public static final String QUIZ_CORRECT = "/quiz_correct";
     public static final String QUIZ_INCORRECT = "/quiz_incorrect";
     public static final String QUIZ_START = "/quiz_start";
-    //Храним варианты ответа
+    // Answer options
     private static final List<String> OPTIONS = List.of("A", "B", "C", "D");
 
     private final JpaUserRepository userRepository;
@@ -40,10 +40,10 @@ public class QuizHandler implements Handler {
     @Override
     public List<PartialBotApiMethod<? extends Serializable>> handle(User user, String message) {
         if (message.startsWith(QUIZ_CORRECT)) {
-            // действие на коллбек с правильным ответом
+            // action performed on callback with correct answer
             return correctAnswer(user, message);
         } else if (message.startsWith(QUIZ_INCORRECT)) {
-            // действие на коллбек с неправильным ответом
+            // action performed on callback with incorrect answer
             return incorrectAnswer(user);
         } else {
             return startNewQuiz(user);
@@ -52,25 +52,28 @@ public class QuizHandler implements Handler {
 
     private List<PartialBotApiMethod<? extends Serializable>> correctAnswer(User user, String message) {
         log.info("correct");
+
+        // Incrementing user score
         final int currentScore = user.getScore() + 1;
         user.setScore(currentScore);
         userRepository.save(user);
 
+        // Returning next question
         return nextQuestion(user);
     }
 
     private List<PartialBotApiMethod<? extends Serializable>> incorrectAnswer(User user) {
         final int currentScore = user.getScore();
-        // Обновляем лучший итог
+        // Changing high score if needed
         if (user.getHighScore() < currentScore) {
             user.setHighScore(currentScore);
         }
-        // Меняем статус пользователя
+        // Updating user status
         user.setScore(0);
         user.setBotState(State.NONE);
         userRepository.save(user);
 
-        // Создаем кнопку для повторного начала игры
+        // Creating "Try again?" button
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
 
         List<InlineKeyboardButton> inlineKeyboardButtonsRowOne = List.of(
@@ -93,12 +96,12 @@ public class QuizHandler implements Handler {
     private List<PartialBotApiMethod<? extends Serializable>> nextQuestion(User user) {
         Question question = questionRepository.getRandomQuestion();
 
-        // Собираем список возможных вариантов ответа
+        // Getting list of available answers
         List<String> options = new ArrayList<>(List.of(question.getCorrectAnswer(), question.getOptionOne(), question.getOptionTwo(), question.getOptionThree()));
-        // Перемешиваем
+        // Shuffling
         Collections.shuffle(options);
 
-        // Начинаем формировать сообщение с вопроса
+        // Creating message by starting with defining the question
         StringBuilder sb = new StringBuilder();
         sb.append('*')
                 .append(question.getQuestion())
@@ -106,11 +109,11 @@ public class QuizHandler implements Handler {
 
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
 
-        // Создаем два ряда кнопок
+        // Create two lines of buttons
         List<InlineKeyboardButton> inlineKeyboardButtonsRowOne = new ArrayList<>();
         List<InlineKeyboardButton> inlineKeyboardButtonsRowTwo = new ArrayList<>();
 
-        // Формируем сообщение и записываем CallBackData на кнопки
+        // Define message and add callback data to the buttons
         for (int i = 0; i < options.size(); i++) {
             InlineKeyboardButton button = new InlineKeyboardButton();
 
@@ -124,8 +127,8 @@ public class QuizHandler implements Handler {
             } else {
                 inlineKeyboardButtonsRowTwo.add(button);
             }
-            sb.append(OPTIONS.get(i) + ". " + options.get(i));
-            sb.append("\n");
+            sb.append(OPTIONS.get(i) + ". " + options.get(i))
+                    .append("\n");
         }
 
         inlineKeyboardMarkup.setKeyboard(List.of(inlineKeyboardButtonsRowOne, inlineKeyboardButtonsRowTwo));

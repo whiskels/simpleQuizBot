@@ -15,9 +15,9 @@ import java.util.List;
 
 @Component
 public class UpdateReceiver {
-    // Храним доступные хендлеры в списке (подсмотрел у Miroha)
+    // Storing available handlers in a list (stolen from Miroha)
     private final List<Handler> handlers;
-    // Имеем доступ в базу пользователей
+    // Achieving access to user storage
     private final JpaUserRepository userRepository;
 
     public UpdateReceiver(List<Handler> handlers, JpaUserRepository userRepository) {
@@ -25,24 +25,24 @@ public class UpdateReceiver {
         this.userRepository = userRepository;
     }
 
-    // Обрабатываем полученный Update
+    // Analyzing received update
     public List<PartialBotApiMethod<? extends Serializable>> handle(Update update) {
-        // try-catch, чтобы при несуществующей команде просто возвращать пустой список
+        // try-catch in order to return empty list on unsupported command
         try {
-            // Проверяем, если Update - сообщение с текстом
+            // Checking if Update is a message with text
             if (isMessageWithText(update)) {
-                // Получаем Message из Update
+                // Getting Message from Update
                 final Message message = update.getMessage();
-                // Получаем айди чата с пользователем
+                // Getting chatId
                 final int chatId = message.getFrom().getId();
 
-                // Просим у репозитория пользователя. Если такого пользователя нет - создаем нового и возвращаем его.
-                // Как раз на случай нового пользователя мы и сделали конструктор с одним параметром в классе User
+                // Getting user from repository. If user is not presented in repository - create new and return him
+                // For this reason we have a one arg constructor in User.class
                 final User user = userRepository.getByChatId(chatId)
                         .orElseGet(() -> userRepository.save(new User(chatId)));
-                // Ищем нужный обработчик и возвращаем результат его работы
+                // Looking for suitable handler
                 return getHandlerByState(user.getBotState()).handle(user, message.getText());
-
+            // Same workflow but for CallBackQuery
             } else if (update.hasCallbackQuery()) {
                 final CallbackQuery callbackQuery = update.getCallbackQuery();
                 final int chatId = callbackQuery.getFrom().getId();

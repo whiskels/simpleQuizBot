@@ -9,14 +9,14 @@ public class TelegramUtil {
         return createMessageTemplate(String.valueOf(user.getChatId()));
     }
 
-    // Создаем шаблон SendMessage с включенным Markdown
+    // Creating template of SendMessage with enabled Markdown
     public static SendMessage createMessageTemplate(String chatId) {
         return new SendMessage()
                 .setChatId(chatId)
                 .enableMarkdown(true);
     }
 
-    // Создаем кнопку
+    // Creating button
     public static InlineKeyboardButton createInlineKeyboardButton(String text, String command) {
         return new InlineKeyboardButton()
                 .setText(text)

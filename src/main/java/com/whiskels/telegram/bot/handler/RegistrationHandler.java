@@ -17,7 +17,7 @@ import static com.whiskels.telegram.util.TelegramUtil.createMessageTemplate;
 
 @Component
 public class RegistrationHandler implements Handler {
-    //Храним поддерживаемые CallBackQuery в виде констант
+    // Supported CallBackQueries are stored as constants
     public static final String NAME_ACCEPT = "/enter_name_accept";
     public static final String NAME_CHANGE = "/enter_name";
     public static final String NAME_CHANGE_CANCEL = "/enter_name_cancel";
@@ -30,7 +30,7 @@ public class RegistrationHandler implements Handler {
 
     @Override
     public List<PartialBotApiMethod<? extends Serializable>> handle(User user, String message) {
-        // Проверяем тип полученного события
+        // Checking type of input message
         if (message.equalsIgnoreCase(NAME_ACCEPT) || message.equalsIgnoreCase(NAME_CHANGE_CANCEL)) {
             return accept(user);
         } else if (message.equalsIgnoreCase(NAME_CHANGE)) {
@@ -41,11 +41,11 @@ public class RegistrationHandler implements Handler {
     }
 
     private List<PartialBotApiMethod<? extends Serializable>> accept(User user) {
-        // Если пользователь принял имя - меняем статус и сохраняем
+        // If user accepted the change - update bot state and save user
         user.setBotState(State.NONE);
         userRepository.save(user);
 
-        // Создаем кнопку для начала игры
+        // Creating button to start new game
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
 
         List<InlineKeyboardButton> inlineKeyboardButtonsRowOne = List.of(
@@ -59,12 +59,12 @@ public class RegistrationHandler implements Handler {
     }
 
     private List<PartialBotApiMethod<? extends Serializable>> checkName(User user, String message) {
-        // При проверке имени мы превентивно сохраняем пользователю новое имя в базе
-        // идея для рефакторинга - добавить временное хранение имени
+        // When we check user name we store it in database immediately
+        // refactoring idea: temporal storage
         user.setName(message);
         userRepository.save(user);
 
-        // Делаем кнопку для применения изменений
+        // Creating button to accept changes
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
 
         List<InlineKeyboardButton> inlineKeyboardButtonsRowOne = List.of(
@@ -78,11 +78,11 @@ public class RegistrationHandler implements Handler {
     }
 
     private List<PartialBotApiMethod<? extends Serializable>> changeName(User user) {
-        // При запросе изменения имени мы меняем State
+        // When name change request is received - bot state changes
         user.setBotState(State.ENTER_NAME);
         userRepository.save(user);
 
-        // Создаем кнопку для отмены операции
+        // Cancel button creation
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
 
         List<InlineKeyboardButton> inlineKeyboardButtonsRowOne = List.of(
